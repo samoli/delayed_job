@@ -44,9 +44,20 @@ describe 'random ruby objects' do
     RandomRubyObject.new.respond_to?(:send_later)
 
   end
+  
+  it "should respond_to :send_at method" do
+
+    RandomRubyObject.new.respond_to?(:send_at)
+
+  end
+  
 
   it "should raise a ArgumentError if send_later is called but the target method doesn't exist" do
     lambda { RandomRubyObject.new.send_later(:method_that_deos_not_exist) }.should raise_error(NoMethodError)
+  end
+
+  it "should raise a ArgumentError if send_at is called but the target method doesn't exist" do
+    lambda { RandomRubyObject.new.send_at(:method_that_deos_not_exist, Time.at(1267012917)) }.should raise_error(NoMethodError)
   end
 
   it "should add a new entry to the job table when send_later is called on it" do
@@ -64,12 +75,34 @@ describe 'random ruby objects' do
 
     Delayed::Job.count.should == 1
   end
+  
+  it "should add a new entry to the job table when send_at is called on it" do
+    Delayed::Job.count.should == 0
 
-  it "should run get the original method executed when the job is performed" do
+    RandomRubyObject.new.send_at(Time.at(1267012917), :to_s)
+
+    Delayed::Job.count.should == 1
+  end
+
+  it "should run get the original method executed when the send later job is performed" do
 
     RandomRubyObject.new.send_later(:say_hello)
 
     Delayed::Job.count.should == 1
+  end
+  
+  it "should run get the original method executed when the send at job is performed" do
+
+    RandomRubyObject.new.send_at(Time.at(1267012917), :say_hello)
+
+    Delayed::Job.count.should == 1
+  end
+  
+  it "should schedule original method executed when the send at job is performed" do
+
+    RandomRubyObject.new.send_at(Time.at(1267012917), :say_hello)
+
+    Delayed::Job.last.run_at.should == Time.at(1267012917)
   end
 
   it "should ignore ActiveRecord::RecordNotFound errors because they are permanent" do
